@@ -43,14 +43,11 @@ def get_city(city):
 
 
 def get_hotel_list(input_data, mode):
-
-    if mode == 'lowprice':
-        sort_order = 'PRICE'
-
-        user_id, check_in, check_out, destinationid, _, search_count_hotel = input_data.values()
-
-    elif mode == 'highprice':
-        sort_order = 'PRICE_HIGHEST_FIRST'
+    if mode == 'lowprice' or mode == 'highprice':
+        if mode == 'lowprice':
+            sort_order = 'PRICE'
+        elif mode == 'highprice':
+            sort_order = 'PRICE_HIGHEST_FIRST'
 
         user_id, check_in, check_out, destinationid, _, search_count_hotel = input_data.values()
 

@@ -34,7 +34,7 @@ def lowprice(message):
         mode = 'bestdeal'
 
 
-    with bot.retrieve_data(user_id=user_id) as data:
+    with bot.retrieve_data(user_id=user_id, chat_id=chat_id) as data:
         data['mode'] = mode
 
 

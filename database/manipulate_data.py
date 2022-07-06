@@ -38,12 +38,12 @@ def check_table():
     if "users_data" not in table:
         command = "CREATE TABLE `hotel_selection`.`users_data` (" \
                   "`id` INT NOT NULL    AUTO_INCREMENT," \
-                  "`users_id`           TINYTEXT NULL," \
-                  "`users_name`         TINYTEXT NULL," \
-                  "`users_age`          TINYTEXT NULL," \
-                  "`users_country`      TINYTEXT NULL," \
-                  "`users_city`         TINYTEXT NULL," \
-                  "`users_phone_number` TINYTEXT NULL," \
+                  "`users_id`            TINYTEXT NULL," \
+                  "`users_name`          TINYTEXT NULL," \
+                  "`users_age`           TINYTEXT NULL," \
+                  "`users_country`       TINYTEXT NULL," \
+                  "`users_city`          TINYTEXT NULL," \
+                  "`users_phone_number`  TINYTEXT NULL," \
                   "PRIMARY KEY (`id`))" \
                   "DEFAULT CHARACTER SET = utf8;"
 
@@ -52,13 +52,9 @@ def check_table():
     if "users_history" not in table:
         command = "CREATE TABLE `hotel_selection`.`users_history` (" \
                   "`id` INT NOT NULL    AUTO_INCREMENT," \
-                  "`users_id`           TINYTEXT NULL," \
-                  "`name_city`          TYNYTEXT NULL," \
-                  "`destinationId`      TINYTEXT NULL," \
-                  "`start_date`         DATE NULL," \
-                  "`end_date`           DATE NULL," \
-                  "`search_count_hotel` TINYTEXT NULL," \
-                  "`search_count_photo` TINYTEXT NULL," \
+                  "`users_id`            TINYTEXT NULL," \
+                  "`date_search`         DATE NULL," \
+                  "`data_search`         JSON NULL," \
                   "PRIMARY KEY (`id`))" \
                   "DEFAULT CHARACTER SET = utf8;"
 
@@ -122,14 +118,18 @@ def download_user_data(*args, **kwargs):
             return None
 
 
-def upload_user_history(input_data):
+def upload_user_history(hotel_dict, user_id, time_input_city):
     if check_table():
-        user_id, name_city, destinationId, time_input_city, start_date, end_date, search_count_hotel, search_count_photo, hotels = input_data.values()
-        connection = create_connection(host_name=host, user_name=user, user_password=password, database_name=name_database)
-        hotels = json.dumps({'hotels': hotels})
-        command = 'INSERT INTO `users_history` (`users_id`, `name_city`, `destinationId`, `time_input_city`, `hotels`, `start_date`, `end_date`, `search_count_hotel`, `search_count_photo`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)'
 
-        value = [user_id, name_city, destinationId, time_input_city, hotels, start_date, end_date, search_count_hotel, search_count_photo]
+        hotel_dict = json.dumps(hotel_dict)
+
+        connection = create_connection(host_name=host, user_name=user, user_password=password, database_name=name_database)
+
+        command = 'INSERT INTO `users_history` (`users_id`, `date_search`, `data_search`) VALUES (%s, %s, %s)'
+
+
+
+        value = [user_id, time_input_city, hotel_dict]
         cursor = connection.cursor()
 
         cursor.execute(command, value)

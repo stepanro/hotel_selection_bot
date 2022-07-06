@@ -6,7 +6,7 @@ from database.manipulate_data import upload_user_data, download_user_data
 
 
 @bot.message_handler(commands=['fill_profile'])
-@bot.message_handler(func=lambda message: message.text == 'Личная информация')
+@bot.message_handler(func=lambda message: message.text == '📝 Личная информация')
 def fill_profile(message):
     if download_user_data(user_id=message.from_user.id):
         users_data = download_user_data(user_id=message.from_user.id)

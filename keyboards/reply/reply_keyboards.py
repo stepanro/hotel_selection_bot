@@ -1,4 +1,6 @@
-from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InputTextMessageContent
+import time
+
+from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InputTextMessageContent, ForceReply
 from loader import bot
 
 def user_contact_request():
@@ -30,7 +32,7 @@ def menu_keyboard():
         KeyboardButton(text="🛏️ Недорогие отели"),
         KeyboardButton(text="🏨 Дорогие отели"),
         KeyboardButton(text="🏩 Лучшие отели"),
-        KeyboardButton(text="📜 История"),
+        KeyboardButton(text="📜 История запросов"),
         KeyboardButton(text="📝 Личная информация")
     )
 

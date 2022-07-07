@@ -155,6 +155,7 @@ def first_user_request(user_id):
 
         for i_answer in cursor.fetchall():
             date_first_user_request = i_answer[0]
+
         cursor.close()
         connection.close()
 

@@ -53,7 +53,7 @@ def check_table():
         command = "CREATE TABLE `hotel_selection`.`users_history` (" \
                   "`id` INT NOT NULL    AUTO_INCREMENT," \
                   "`users_id`            TINYTEXT NULL," \
-                  "`date_search`         DATE NULL," \
+                  "`date_search`         DATETIME NULL," \
                   "`data_search`         JSON NULL," \
                   "PRIMARY KEY (`id`))" \
                   "DEFAULT CHARACTER SET = utf8;"

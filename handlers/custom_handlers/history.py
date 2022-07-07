@@ -14,11 +14,12 @@ def history(message):
     user_id = message.from_user.id
 
     res_date_first_user_request = first_user_request(user_id=user_id)
+    start_date = res_date_first_user_request.date()
     stop_date = datetime.now().date()
 
     if res_date_first_user_request:
         bot.send_message(chat_id=chat_id, text='Вы выполняли первый поиск {date_first_user_request}\nВыберите дату, с которой нужно производить поиск'.format(date_first_user_request=res_date_first_user_request))
-        first_date_search = check_calendar(start_date=res_date_first_user_request.date(), stop_date=stop_date, chat_id=chat_id)
+        first_date_search = check_calendar(start_date=start_date, stop_date=stop_date, chat_id=chat_id)
 
         second_date_search = check_calendar(start_date=first_date_search, stop_date=stop_date, chat_id=chat_id)
         second_date_search = second_date_search + timedelta(days=1)

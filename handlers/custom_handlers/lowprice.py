@@ -61,7 +61,8 @@ def get_name_city(callback):
     message_id = callback.message.id
     user_id = callback.from_user.id
     chat_id = callback.message.chat.id
-    start_date = datetime.now().date()
+    time_input = datetime.today()
+    start_date = time_input.date()
 
     bot.delete_message(chat_id, message_id)
 
@@ -76,7 +77,7 @@ def get_name_city(callback):
         data['check_in'] = check_in
         data['check_out'] = check_out
         data['destinationid'] = destinationid
-        data['time_input_city'] = start_date
+        data['time_input_city'] = time_input
 
     if data['mode'] == 'lowprice' or data['mode'] == 'highprice':
         bot.send_message(chat_id=chat_id, text='Выберите количество отелей', reply_markup=number_keyboard())

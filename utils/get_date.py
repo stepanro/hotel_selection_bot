@@ -7,17 +7,17 @@ from random import randint
 LSTEP = {'y': 'год', 'm': 'месяц', 'd': 'день'}
 
 
-def check_calendar(start_date, chat_id=None):
+def check_calendar(start_date, chat_id, stop_date=None):
     temp_dict = dict()
     calendar_id = randint(1, 1000)
 
-    def select_date_step_one(start_date):
-        start_calendar, start_step = DetailedTelegramCalendar(calendar_id=calendar_id, locale='ru', min_date=start_date).build()
+    def select_date_step_one():
+        start_calendar, start_step = DetailedTelegramCalendar(calendar_id=calendar_id, locale='ru', min_date=start_date, max_date=stop_date).build()
         bot.send_message(chat_id, "Выберите дату заезда в отель", reply_markup=start_calendar)
 
     @bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=calendar_id))
     def select_date_step_two(callback):
-        result, key, step = DetailedTelegramCalendar(calendar_id=calendar_id, locale='ru', min_date=start_date).process(
+        result, key, step = DetailedTelegramCalendar(calendar_id=calendar_id, locale='ru', min_date=start_date, max_date=stop_date).process(
             callback.data)
 
         if not result and key:
@@ -32,7 +32,7 @@ def check_calendar(start_date, chat_id=None):
 
             temp_dict['date'] = result
 
-    select_date_step_one(start_date=start_date)
+    select_date_step_one()
 
     while not temp_dict.get('date'):
         time.sleep(1)

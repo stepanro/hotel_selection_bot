@@ -102,19 +102,25 @@ def download_user_data(*args, **kwargs):
 
         download_user_data = "SELECT * FROM `users_data` WHERE `users_id` = {user_id}".format(user_id=kwargs['user_id'])
 
-        connection = create_connection(host_name=host, user_name=user, user_password=password, database_name=name_database)
+        connection = create_connection(host_name=host, user_name=user, user_password=password,
+                                       database_name=name_database)
 
         cursor = connection.cursor()
 
         cursor.execute(download_user_data)
         if cursor:
             for id, user_id, user_name, user_age, user_country, user_city, user_phone_number in cursor.fetchall():
-                return id, user_id, user_name, user_age, user_country, user_city, user_phone_number
+                id, user_id, user_name, user_age, user_country, user_city, user_phone_number =\
+                    id, user_id, user_name, user_age, user_country, user_city, user_phone_number
+
             cursor.close()
             connection.close()
+
+            return id, user_id, user_name, user_age, user_country, user_city, user_phone_number
         else:
             cursor.close()
             connection.close()
+
             return None
 
 
@@ -136,3 +142,41 @@ def upload_user_history(hotel_dict, user_id, time_input_city):
         connection.commit()
         cursor.close()
         connection.close()
+
+def first_user_request(user_id):
+    if check_table():
+        connection = create_connection(host_name=host, user_name=user, user_password=password, database_name=name_database)
+
+        command = f'SELECT MIN(`date_search`) FROM `users_history` WHERE `users_id` = {user_id}'
+
+        cursor = connection.cursor()
+
+        cursor.execute(command)
+
+        for i_answer in cursor.fetchall():
+            date_first_user_request = i_answer[0]
+        cursor.close()
+        connection.close()
+
+        return date_first_user_request
+
+
+def get_history(user_id, start_search_date, stop_search_date):
+    if check_table():
+        data = list()
+
+        connection = create_connection(host_name=host, user_name=user, user_password=password, database_name=name_database)
+
+        command = f"SELECT `data_search` FROM `users_history` WHERE `date_search` BETWEEN '{start_search_date}' AND '{stop_search_date}'"
+
+        cursor = connection.cursor()
+
+        cursor.execute(command)
+
+        for i_answer in cursor.fetchall():
+            data.append(i_answer[0])
+
+        cursor.close()
+        connection.close()
+
+        return data

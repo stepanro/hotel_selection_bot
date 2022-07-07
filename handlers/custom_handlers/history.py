@@ -15,7 +15,7 @@ def history(message):
 
     res_date_first_user_request = first_user_request(user_id=user_id)
     start_date = res_date_first_user_request.date()
-    stop_date = datetime.now().date()
+    stop_date = datetime.now()
 
     if res_date_first_user_request:
         bot.send_message(chat_id=chat_id, text='Вы выполняли первый поиск {date_first_user_request}\nВыберите дату, с которой нужно производить поиск'.format(date_first_user_request=res_date_first_user_request))

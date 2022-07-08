@@ -107,21 +107,16 @@ def download_user_data(*args, **kwargs):
 
         cursor = connection.cursor()
 
-        cursor.execute(download_user_data)
-        if cursor:
-            for id, user_id, user_name, user_age, user_country, user_city, user_phone_number in cursor.fetchall():
-                id, user_id, user_name, user_age, user_country, user_city, user_phone_number =\
-                    id, user_id, user_name, user_age, user_country, user_city, user_phone_number
+        cursor.execute(operation=download_user_data)
+
+        for result in cursor.fetchall():
+            id, user_id, user_name, user_age, user_country, user_city, user_phone_number = result
 
             cursor.close()
             connection.close()
 
             return id, user_id, user_name, user_age, user_country, user_city, user_phone_number
-        else:
-            cursor.close()
-            connection.close()
 
-            return None
 
 
 def upload_user_history(hotel_dict, user_id, time_input_city):
@@ -168,7 +163,7 @@ def get_history(user_id, start_search_date, stop_search_date):
 
         connection = create_connection(host_name=host, user_name=user, user_password=password, database_name=name_database)
 
-        command = f"SELECT `data_search` FROM `users_history` WHERE `date_search` BETWEEN '{start_search_date}' AND '{stop_search_date}'"
+        command = f"SELECT `data_search` FROM `users_history` WHERE `users_id` = {user_id} AND `date_search` BETWEEN '{start_search_date}' AND '{stop_search_date}'"
 
         cursor = connection.cursor()
 

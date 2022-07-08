@@ -8,8 +8,10 @@ from database.manipulate_data import upload_user_data, download_user_data
 @bot.message_handler(commands=['fill_profile'])
 @bot.message_handler(func=lambda message: message.text == '📝 Личная информация')
 def fill_profile(message):
-    if download_user_data(user_id=message.from_user.id):
-        users_data = download_user_data(user_id=message.from_user.id)
+
+    users_data = download_user_data(user_id=message.from_user.id)
+
+    if users_data:
         id, user_id, user_name, user_age, user_country, user_city, user_phone_number = users_data
         bot.send_message(message.from_user.id,
                          'Вы уже заполняли эту форму, вот ваши данные\n'

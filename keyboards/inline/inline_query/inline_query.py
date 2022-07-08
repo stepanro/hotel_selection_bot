@@ -11,21 +11,7 @@ import time
 
 def random_number(input_list):
     for position in input_list:
-        yield random.randint(1, 1000), position
-
-
-@bot.inline_handler(func=lambda query: query.query.startswith('see_photo'))
-def see_photo(query):
-    _, id_hotel, count_photo = query.query.split()
-    link_photo_list = get_photo(id_hotel, count_photo)
-
-    photo_list = [InlineQueryResultPhoto(
-        id=id_photo,
-        photo_url=link_photo,
-        thumb_url=link_photo,
-    ) for id_photo, link_photo in random_number(link_photo_list)]
-
-    bot.answer_inline_query(inline_query_id=query.id, results=photo_list, cache_time=0, is_personal=True)
+        yield random.randint(1, 100000), position
 
 
 @bot.callback_query_handler(func=lambda callback: callback.data.startswith('count_photo_question'))
@@ -48,6 +34,23 @@ def count_photo_question(callback):
     UserInfoState.data_count_photo['id_message'] = res.id
 
     edit_number_photo_keyboard()
+
+
+@bot.inline_handler(func=lambda query: query.query.startswith('see_photo'))
+def see_photo(query):
+    try:
+        _, id_hotel, count_photo = query.query.split()
+        link_photo_list = get_photo(id_hotel, count_photo)
+
+        photo_list = [InlineQueryResultPhoto(
+            id=id_photo,
+            photo_url=link_photo,
+            thumb_url=link_photo,
+        ) for id_photo, link_photo in random_number(link_photo_list)]
+
+        bot.answer_inline_query(inline_query_id=query.id, results=photo_list, cache_time=0, is_personal=True)
+    except Exception as exc:
+        print(exc)
 
 
 @bot.inline_handler(func=lambda query: query.query.startswith('see_geo'))

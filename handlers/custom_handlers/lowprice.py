@@ -102,6 +102,12 @@ def number_hotels(message):
 
     for count_hotel, hotel in enumerate(request_get_hotel.values()):
         time.sleep(0.5)
+
+        if hotel['hotel_price'] == 'нет данных о стоимости отеля':
+            hotel_price_all_time = hotel['hotel_price']
+        else:
+            hotel_price_all_time = f'💰 стоимость за все время {round(float(hotel["hotel_price"]) * (data["check_out"] - data["check_in"]).days, 3)}'
+
         try:
             bot.send_photo(chat_id=message.from_user.id,
                            photo=hotel['url_pic'],
@@ -112,7 +118,7 @@ def number_hotels(message):
                                all_day_in_hotel=f'⌛ всего времени в отеле {(data["check_out"] - data["check_in"]).days}',
                                distance_center=f'📍 Дистанция от исторического центра {hotel["distance_center"]}',
                                hotel_price=f'💲 стоимость одной ночи {hotel["hotel_price"]}',
-                               hotel_price_all_time=f'💰 стоимость за все время {round(float(hotel["hotel_price"]) * (data["check_out"] - data["check_in"]).days, 3)}'
+                               hotel_price_all_time=hotel_price_all_time
                            ),
                            reply_markup=open_photo_or_geo(
                                id_hotel=hotel['hotel_id'],
@@ -142,7 +148,7 @@ def number_hotels(message):
             'all_day_in_hotel': f'⌛ всего времени в отеле {(data["check_out"] - data["check_in"]).days}',
             'distance_center': f'📍 Дистанция от исторического центра {hotel["distance_center"]}',
             'hotel_price': f'💲 стоимость одной ночи {hotel["hotel_price"]}',
-            'hotel_price_all_time': f'💰 стоимость за все время {round(float(hotel["hotel_price"]) * (data["check_out"] - data["check_in"]).days, 3)}'
+            'hotel_price_all_time': hotel_price_all_time
         }
 
         if count_hotel + 1 == len(request_get_hotel):

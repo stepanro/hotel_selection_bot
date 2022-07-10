@@ -1,7 +1,4 @@
-import time
-
-from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InputTextMessageContent, ForceReply
-from loader import bot
+from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 
 def user_contact_request():
     user_contact_request = ReplyKeyboardMarkup(row_width=1, one_time_keyboard=True, resize_keyboard=True)

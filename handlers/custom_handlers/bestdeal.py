@@ -1,13 +1,6 @@
-import time
 from loader import bot
 from states.ClassUserState import UserInfoState
-from utils.get_data_from_api import get_hotel_list
-from keyboards.inline.inline_keyboards import close_operation, search_city_inline_keyboard, open_photo_or_geo
-from keyboards.reply.reply_keyboards import menu_keyboard, number_keyboard
-from utils.get_data_from_api import get_city
-from datetime import datetime, timedelta
-from database.manipulate_data import upload_user_history
-from utils.get_date import check_calendar
+from keyboards.reply.reply_keyboards import number_keyboard
 
 
 @bot.message_handler(state=UserInfoState.min_price)

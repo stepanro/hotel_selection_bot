@@ -1,12 +1,8 @@
 import json
-from datetime import datetime
 from requests import get, codes, request
 import os
-from dotenv import load_dotenv
 import re
-from loader import bot
-
-load_dotenv()
+from config_data.config import headers
 
 
 def request_to_api(url, headers, querystring):
@@ -17,11 +13,6 @@ def request_to_api(url, headers, querystring):
 
 
 def get_city(city):
-    headers = {
-        "X-RapidAPI-Host": os.getenv('RAPID_API_HOST'),
-        "X-RapidAPI-Key": os.getenv('RAPID_API_KEY')
-    }
-
     url_search_city = os.getenv('URL_SEARCH_CITY')
     querystring = {"query": city,
                    "locale": "ru_RU",
@@ -42,79 +33,72 @@ def get_city(city):
     return search_dict
 
 
-def get_hotel_list(input_data, mode):
+def get_mode(input_data, mode):
+    sort_order = None
+
     if mode == 'lowprice' or mode == 'highprice':
         if mode == 'lowprice':
             sort_order = 'PRICE'
         elif mode == 'highprice':
             sort_order = 'PRICE_HIGHEST_FIRST'
-
-        user_id, check_in, check_out, destinationid, _, search_count_hotel = input_data.values()
+        return sort_order
 
     elif mode == 'bestdeal':
         sort_order = 'PRICE'
-
-        user_id, check_in, check_out, destinationid, _, min_price, max_price, min_distance, max_distance, search_count_hotel = input_data.values()
-
+        return sort_order
 
 
-    headers = {
-        "X-RapidAPI-Host": os.getenv('RAPID_API_HOST'),
-        "X-RapidAPI-Key": os.getenv('RAPID_API_KEY')
-    }
+def get_data(response):
+    data = dict()
+    pattern = r'(?="results":).+?(?=,"pagination")'
+    find = re.search(pattern, response.text)
+
+    if find:
+        data = json.loads(f"{{{find[0]}}}")
+
+    return data
+
+
+def get_hotel_list(input_data, mode):
+    count_hotel, search_dict, querystring, search_count_hotel, destinationid, check_in, check_out, sort_order, \
+        min_price, max_price = int(), dict(), dict(), int(), int(), int(), int(), int(), int(), int()
+
+    sort_order = get_mode(input_data, mode)
+    if mode == 'lowprice' or mode == 'highprice':
+        destinationid, _, check_in, check_out, user_id, search_count_hotel = input_data.values()
+    elif mode == 'bestdeal':
+        destinationid, _, check_in, check_out, user_id, min_price, max_price, min_distance, max_distance, search_count_hotel = input_data.values()
 
     url_search_city = os.getenv('URL_PROPERTIES_LIST')
 
     if mode == 'lowprice' or mode == 'highprice':
-        querystring = {"destinationId": destinationid,
-                       "pageNumber": "1",
-                       "pageSize": "25",
-                       "checkIn": check_in,
-                       "checkOut": check_out,
-                       "adults1": "1",
-                       "sortOrder": sort_order,
-                       "locale": "ru_RU",
-                       "currency": "RUB"
-                       }
+        querystring = {"destinationId": destinationid, "pageNumber": "1", "pageSize": "25", "checkIn": check_in,
+                       "checkOut": check_out, "adults1": "1", "sortOrder": sort_order,
+                       "locale": "ru_RU", "currency": "RUB"}
 
     elif mode == 'bestdeal':
-        querystring = {"destinationId": destinationid,
-                       "pageNumber": "1",
-                       "pageSize": "25",
-                       "checkIn": check_in,
-                       "checkOut": check_out,
-                       "adults1": "1",
-                       "sortOrder": sort_order,
-                       "locale": "ru_RU",
-                       "currency": "RUB",
-                       "priceMin": min_price,
-                       "priceMax": max_price
-                       }
+        querystring = {"destinationId": destinationid, "pageNumber": "1", "pageSize": "25", "checkIn": check_in,
+                       "checkOut": check_out, "adults1": "1", "sortOrder": sort_order,
+                       "locale": "ru_RU", "currency": "RUB", "priceMin": min_price, "priceMax": max_price}
 
     response = request_to_api(url=url_search_city, headers=headers, querystring=querystring)
 
+    data = get_data(response)
 
-    pattern = r'(?="results":).+?(?=,"pagination")'
-    find = re.search(pattern, response.text)
-    search_dict = dict()
-    if find:
-        data = json.loads(f"{{{find[0]}}}")
-
-        count_hotel = int()
-
+    if data:
         for hotel in data['results']:
             if count_hotel < int(search_count_hotel):
                 if mode == 'lowprice' or mode == 'highprice':
                     if hotel.get('ratePlan') and hotel.get('landmarks'):
                         hotel_price = hotel['ratePlan']['price']['exactCurrent']
-                        distance_center = re.sub(',', '.', hotel['landmarks'][0]['distance'].split()[0])
+                        distance_center = re.sub(',', '../utils', hotel['landmarks'][0]['distance'].split()[0])
                     else:
                         if hotel.get('ratePlan'):
                             hotel_price = hotel['ratePlan']['price']['exactCurrent']
                             distance_center = 'нет данных о расстоянии от центра'
                         elif hotel.get('landmarks'):
                             hotel_price = 'нет данных о стоимости отеля'
-                            distance_center = re.sub(',', '.', hotel['landmarks'][0]['distance'].split()[0])
+                            distance_center = re.sub(',', '../utils', hotel['landmarks'][0]['distance'].split()[0])
 
                     search_dict[hotel['name']] = {'hotel_name': hotel['name'],
                                                   'hotel_id': hotel['id'],
@@ -138,7 +122,7 @@ def get_hotel_list(input_data, mode):
                             distance_center = 'нет данных о расстоянии от центра'
                         elif hotel.get('landmarks'):
                             hotel_price = 'нет данных о стоимости отеля'
-                            distance_center = re.sub(',', '.', hotel['landmarks'][0]['distance'].split()[0])
+                            distance_center = re.sub(',', '../utils', hotel['landmarks'][0]['distance'].split()[0])
 
                     if float(min_distance) < float(distance_center) < float(max_distance):
                         search_dict[hotel['name']] = {'hotel_name': hotel['name'],
@@ -160,11 +144,6 @@ def get_photo(id_hotel, count_photos):
     url = os.getenv('URL_PROPERTIES_GET_HOTEL_PHOTO')
 
     querystring = {"id": id_hotel}
-
-    headers = {
-        "X-RapidAPI-Host": os.getenv('RAPID_API_HOST'),
-        "X-RapidAPI-Key": os.getenv('RAPID_API_KEY')
-    }
 
     response = request("GET", url, headers=headers, params=querystring)
 

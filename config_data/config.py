@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv, find_dotenv
 
+
 if not find_dotenv():
     exit('Переменные окружения не загружены т.к отсутствует файл .env')
 else:
@@ -17,3 +18,8 @@ DEFAULT_COMMANDS = (
     ('bestdeal', 'вывод отелей, наиболее подходящих по цене и расположению от центра'),
     ('history', 'вывод истории поиска отелей')
 )
+
+headers = {
+    "X-RapidAPI-Host": os.getenv('RAPID_API_HOST'),
+    "X-RapidAPI-Key": os.getenv('RAPID_API_KEY')
+}

@@ -1,12 +1,10 @@
 from loader import bot
-from utils.get_data_from_api import get_photo
-from telebot.types import InlineQueryResultLocation, InlineQueryResultPhoto, InputTextMessageContent
-from keyboards.reply.reply_keyboards import number_keyboard
+from apis.get_data_from_api import get_photo
+from telebot.types import InlineQueryResultLocation, InlineQueryResultPhoto
 from keyboards.inline.inline_keyboards import number_photo_keyboard
 from states.ClassUserState import UserInfoState
 import random
 from keyboards.inline.inline_keyboards import edit_number_photo_keyboard
-import time
 
 
 def random_number(input_list):

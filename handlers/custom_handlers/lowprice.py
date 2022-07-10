@@ -1,16 +1,18 @@
 import time
 from loader import bot
-from states.ClassUserState import UserInfoState
-from utils.get_data_from_api import get_hotel_list
+from states.ClassUserState import UserInfoState, DateRangeState
+from apis.get_data_from_api import get_hotel_list
 from keyboards.inline.inline_keyboards import close_operation, search_city_inline_keyboard, open_photo_or_geo
 from keyboards.reply.reply_keyboards import menu_keyboard, number_keyboard
-from utils.get_data_from_api import get_city
+from apis.get_data_from_api import get_city
 from datetime import datetime, timedelta
 from database.manipulate_data import upload_user_history
-from utils.get_date import check_calendar
+from utils.get_date import get_calendar
+from telegram_bot_calendar import DetailedTelegramCalendar
+from telebot.types import CallbackQuery
 
 city_dict = dict()
-LSTEP = {'y': 'год', 'm': 'месяц', 'd': 'день'}
+ALL_STEPS = {'y': 'год', 'm': 'месяц', 'd': 'день'}
 
 
 @bot.message_handler(commands=['lowprice', 'highprice', 'bestdeal'])
@@ -66,26 +68,113 @@ def get_name_city(callback):
 
     bot.delete_message(chat_id, message_id)
 
-    check_in = check_calendar(chat_id=chat_id, start_date=start_date)
+    out_message = bot.send_message(chat_id=chat_id, text="Выберите дату въезда в отель")
 
-    start_date = check_in + timedelta(days=1)
+    calendar, step = get_calendar(calendar_id=1,
+                                  current_date=start_date,
+                                  min_date=start_date,
+                                  max_date=start_date + timedelta(days=365),
+                                  locale="ru")
 
-    check_out = check_calendar(chat_id=chat_id, start_date=start_date)
+    bot.set_state(user_id=user_id, state=DateRangeState.check_in, chat_id=chat_id)
+    bot.send_message(chat_id=chat_id, text=f"Выберите  {ALL_STEPS[step]}", reply_markup=calendar)
 
     with bot.retrieve_data(chat_id=chat_id, user_id=user_id) as data:
-        data['user_id'] = user_id
-        data['check_in'] = check_in
-        data['check_out'] = check_out
+        data['out_message'] = out_message.message_id
         data['destinationid'] = destinationid
         data['time_input_city'] = time_input
 
-    if data['mode'] == 'lowprice' or data['mode'] == 'highprice':
-        bot.send_message(chat_id=chat_id, text='Выберите количество отелей', reply_markup=number_keyboard())
-        bot.set_state(user_id=user_id, state=UserInfoState.number_hotels, chat_id=chat_id)
 
-    elif data['mode'] == 'bestdeal':
-        bot.send_message(chat_id=chat_id, text='Введите минимальную стоимость отеля в рублях')
-        bot.set_state(user_id=user_id, state=UserInfoState.min_price, chat_id=chat_id)
+@bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=1))
+def handle_arrival_date(call: CallbackQuery):
+    start_date = datetime.today().date()
+    chat_id = call.message.chat.id
+    user_id = call.from_user.id
+
+    result, key, step = get_calendar(calendar_id=1,
+                                     current_date=start_date,
+                                     min_date=start_date,
+                                     max_date=start_date + timedelta(days=365),
+                                     locale="ru",
+                                     is_process=True,
+                                     callback_data=call)
+
+    if not result and key:
+        bot.edit_message_text(f"Выберите {ALL_STEPS[step]}",
+                              call.from_user.id,
+                              call.message.message_id,
+                              reply_markup=key)
+    elif result:
+        with bot.retrieve_data(user_id=user_id, chat_id=chat_id) as data:
+            data['check_in'] = result
+            out_message = data['out_message']
+            bot.delete_message(chat_id=chat_id, message_id=out_message)
+            bot.edit_message_text(f"Дата начала поиска {result}",
+                                  call.message.chat.id,
+                                  call.message.message_id)
+
+            out_message = bot.send_message(call.from_user.id, "Выберите дату выезда из отеля")
+            data['out_message'] = out_message.message_id
+            calendar, step = get_calendar(calendar_id=2,
+                                          min_date=result,
+                                          max_date=start_date + timedelta(days=365),
+                                          locale="ru",
+                                          )
+
+            bot.send_message(call.from_user.id,
+                             f"Выберите {ALL_STEPS[step]}",
+                             reply_markup=calendar)
+
+            bot.set_state(call.from_user.id, DateRangeState.check_out, call.message.chat.id)
+
+
+@bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=2))
+def handle_arrival_date(call: CallbackQuery):
+    today = datetime.today().date()
+    chat_id = call.message.chat.id
+    user_id = call.from_user.id
+    message_id = call.message.message_id
+
+    with bot.retrieve_data(chat_id=chat_id, user_id=user_id) as data:
+        start_date = data['check_in']
+
+    result, key, step = get_calendar(calendar_id=2,
+                                     current_date=today,
+                                     min_date=start_date + timedelta(days=1),
+                                     max_date=today + timedelta(days=365),
+                                     locale="ru",
+                                     is_process=True,
+                                     callback_data=call)
+    if not result and key:
+
+        bot.edit_message_text(f"Выберите {ALL_STEPS[step]}",
+                              chat_id=chat_id,
+                              message_id=message_id,
+                              reply_markup=key)
+    elif result:
+        with bot.retrieve_data(call.from_user.id, call.message.chat.id) as data:
+            data['check_out'] = result
+            out_message = data.pop('out_message')
+            bot.delete_message(chat_id=chat_id, message_id=out_message)
+
+            bot.edit_message_text(f"Дата окончания поиска {result}",
+                                  call.message.chat.id,
+                                  call.message.message_id)
+
+            data['user_id'] = user_id
+
+        set_numer_hotels(chat_id=chat_id, user_id=user_id)
+
+
+def set_numer_hotels(chat_id, user_id):
+    with bot.retrieve_data(user_id=user_id, chat_id=chat_id) as data:
+        if data['mode'] == 'lowprice' or data['mode'] == 'highprice':
+            bot.send_message(chat_id=chat_id, text='Выберите количество отелей', reply_markup=number_keyboard())
+            bot.set_state(user_id=user_id, state=UserInfoState.number_hotels, chat_id=chat_id)
+
+        elif data['mode'] == 'bestdeal':
+            bot.send_message(chat_id=chat_id, text='Введите минимальную стоимость отеля в рублях')
+            bot.set_state(user_id=user_id, state=UserInfoState.min_price, chat_id=chat_id)
 
 
 @bot.message_handler(state=UserInfoState.number_hotels)

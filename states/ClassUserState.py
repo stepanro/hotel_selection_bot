@@ -23,5 +23,14 @@ class UserInfoState(StatesGroup):
     min_distance = State()
     max_distance = State()
 
+    """Статусы истории запросов"""
+    requests_history = State()
+
     """Промежуточные статусы"""
     upload_photo = State()
+
+class DateRangeState(StatesGroup):
+    check_in = State()
+    check_out = State()
+    start_search_date = State()
+    stop_search_date = State()

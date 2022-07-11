@@ -3,10 +3,11 @@ from requests import get, codes, request
 import os
 import re
 from config_data.config import headers
+from loader import logger
 
 
 def request_to_api(url, headers, querystring):
-    response = get(url, headers=headers, params=querystring, timeout=10)
+    response = get(url, headers=headers, params=querystring, timeout=30)
     if response.status_code == codes.ok:
         return response
 
@@ -59,15 +60,18 @@ def get_data(response):
     return data
 
 
+@logger.catch
 def get_hotel_list(input_data, mode):
     count_hotel, search_dict, querystring, search_count_hotel, destinationid, check_in, check_out, sort_order, \
         min_price, max_price = int(), dict(), dict(), int(), int(), int(), int(), int(), int(), int()
 
     sort_order = get_mode(input_data, mode)
+
     if mode == 'lowprice' or mode == 'highprice':
         destinationid, _, check_in, check_out, user_id, search_count_hotel = input_data.values()
     elif mode == 'bestdeal':
         destinationid, _, check_in, check_out, user_id, min_price, max_price, min_distance, max_distance, search_count_hotel = input_data.values()
+
 
     url_search_city = os.getenv('URL_PROPERTIES_LIST')
 

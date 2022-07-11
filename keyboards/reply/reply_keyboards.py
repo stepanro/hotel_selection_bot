@@ -23,7 +23,7 @@ def number_keyboard(one_time_keyboard=True):
 
 
 def menu_keyboard():
-    menu_keyboard = ReplyKeyboardMarkup(row_width=2, one_time_keyboard=True, resize_keyboard=False)
+    menu_keyboard = ReplyKeyboardMarkup(row_width=2, one_time_keyboard=True, resize_keyboard=True)
 
     menu_keyboard.add(
         KeyboardButton(text="🛏️ Недорогие отели"),

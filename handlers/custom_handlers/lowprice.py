@@ -179,9 +179,12 @@ def set_numer_hotels(chat_id, user_id):
 
 @bot.message_handler(state=UserInfoState.number_hotels)
 def number_hotels(message):
+    chat_id = message.chat.id
+    user_id = message.from_user.id
+
     hotel_dict = dict()
 
-    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+    with bot.retrieve_data(chat_id=chat_id, user_id=user_id) as data:
         data['search_count_hotel'] = message.text
 
     mode = data.pop('mode')
@@ -210,6 +213,8 @@ def number_hotels(message):
                                hotel_price_all_time=hotel_price_all_time
                            ),
                            reply_markup=open_photo_or_geo(
+                               chat_id=chat_id,
+                               user_id=user_id,
                                id_hotel=hotel['hotel_id'],
                                latitude=hotel['hotel_coordinate']['lat'],
                                longitude=hotel['hotel_coordinate']['lon']
@@ -252,3 +257,5 @@ def number_hotels(message):
         )
 
     upload_user_history(hotel_dict, data['user_id'], data['time_input_city'])
+    bot.delete_state(message.from_user.id, message.chat.id)
+

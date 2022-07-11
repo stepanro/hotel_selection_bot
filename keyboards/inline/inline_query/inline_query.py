@@ -5,6 +5,7 @@ from keyboards.inline.inline_keyboards import number_photo_keyboard
 from states.ClassUserState import UserInfoState
 import random
 from keyboards.inline.inline_keyboards import edit_number_photo_keyboard
+from database.manipulate_data import upload_inline_hotel_photo_buttons
 
 
 def random_number(input_list):
@@ -14,24 +15,24 @@ def random_number(input_list):
 
 @bot.callback_query_handler(func=lambda callback: callback.data.startswith('count_photo_question'))
 def count_photo_question(callback):
+    chat_id = callback.message.chat.id
+    user_id = callback.from_user.id
     _, id_hotel = callback.data.split()
-    UserInfoState.data_count_photo['id_hotel'] = id_hotel
-    UserInfoState.data_count_photo['id_chat'] = callback.message.chat.id
-    UserInfoState.data_count_photo['start_number'] = 10
-    bot.set_state(user_id=callback.from_user.id, state=UserInfoState.upload_photo)
 
-    res = bot.send_message(
+    bot.set_state(user_id=user_id, state=UserInfoState.upload_photo, chat_id=chat_id)
+
+    res = bot.edit_message_reply_markup(
         chat_id=callback.from_user.id,
-        text='Сколько фото загружать?',
+        message_id=callback.message.id,
         reply_markup=number_photo_keyboard(
             id_hotel=id_hotel,
             start_number=10
         )
     )
+    start_number = 10
+    id_message = res.message_id
 
-    UserInfoState.data_count_photo['id_message'] = res.id
-
-    edit_number_photo_keyboard()
+    edit_number_photo_keyboard(start_number, id_message, chat_id, user_id, id_hotel)
 
 
 @bot.inline_handler(func=lambda query: query.query.startswith('see_photo'))

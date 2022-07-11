@@ -3,9 +3,7 @@ import json
 import mysql.connector
 from mysql.connector import Error
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
+from config_data.config import load_dotenv
 
 def create_connection(*args, **kwargs):
     host_name, user_name, user_password, database_name = kwargs.values()
@@ -36,7 +34,7 @@ def check_table():
     cursor.execute(f"SHOW TABLES FROM {os.getenv('NAME_DATABASE')}")
     table = [i[0] for i in cursor]
     if "users_data" not in table:
-        command = "CREATE TABLE `hotel_selection`.`users_data` (" \
+        command = f"CREATE TABLE `{name_database}`.`users_data` (" \
                   "`id` INT NOT NULL    AUTO_INCREMENT," \
                   "`users_id`            TINYTEXT NULL," \
                   "`users_name`          TINYTEXT NULL," \
@@ -50,15 +48,26 @@ def check_table():
         cursor.execute(command)
 
     if "users_history" not in table:
-        command = "CREATE TABLE `hotel_selection`.`users_history` (" \
+        command = f"CREATE TABLE `{name_database}`.`users_history` (" \
                   "`id` INT NOT NULL    AUTO_INCREMENT," \
                   "`users_id`            TINYTEXT NULL," \
                   "`date_search`         DATETIME NULL," \
-                  "`data_search`         JSON NULL," \
+                  "`data_search`             JSON NULL," \
                   "PRIMARY KEY (`id`))" \
                   "DEFAULT CHARACTER SET = utf8;"
-
         cursor.execute(command)
+
+    if "inline_hotel_photo_buttons" not in table:
+        command = f"CREATE TABLE `{name_database}`.`inline_hotel_photo_buttons` (" \
+                  "`id` INT NOT NULL    AUTO_INCREMENT," \
+                  "`id_hotel`                 INT NULL," \
+                  "`latitude`               FLOAT NULL," \
+                  "`longitude`              FLOAT NULL," \
+                  "PRIMARY KEY (`id`))" \
+                  "DEFAULT CHARACTER SET = utf8;"
+        cursor.execute(command)
+
+
     cursor.close()
     connection.close()
 
@@ -176,3 +185,52 @@ def get_history(user_id, start_search_date, stop_search_date):
         connection.close()
 
         return data
+
+
+def upload_inline_hotel_photo_buttons(*args, **kwargs):
+    if check_table():
+        id_hotel, latitude, longitude = kwargs.values()
+        connection = create_connection(host_name=host, user_name=user, user_password=password,
+                                       database_name=name_database)
+
+        cursor = connection.cursor()
+
+        check_row_command = f"SELECT * FROM `inline_hotel_photo_buttons` WHERE `id_hotel` = {id_hotel}"
+
+
+
+        cursor.execute(check_row_command)
+        cursor.fetchall()
+        if cursor.rowcount > 0:
+            pass
+        else:
+            incert_row_command = f"INSERT INTO `inline_hotel_photo_buttons` (`id_hotel`, `latitude`, `longitude`) VALUE ({id_hotel}, {latitude}, {longitude})"
+            cursor.execute(incert_row_command)
+
+            connection.commit()
+            cursor.close()
+            connection.close()
+
+
+def download_inline_hotel_photo_buttons(*args, **kwargs):
+    id_hotel = args[0]
+
+    connection = create_connection(host_name=host, user_name=user, user_password=password,
+                                   database_name=name_database)
+    cursor = connection.cursor()
+
+    check_row_command = f"SELECT * FROM `inline_hotel_photo_buttons` WHERE `id_hotel` = {id_hotel}"
+
+    cursor.execute(check_row_command)
+
+    cursor.fetchall()
+    if cursor.rowcount > 0:
+        download_button_data_command = f"SELECT `latitude`, `longitude` FROM `inline_hotel_photo_buttons` WHERE `id_hotel` = {id_hotel}"
+
+        cursor.execute(download_button_data_command)
+
+
+        for latitude, longitude in cursor.fetchall():
+            return latitude, longitude
+
+

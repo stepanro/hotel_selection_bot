@@ -3,7 +3,10 @@ from loader import bot
 from states.ClassUserState import UserInfoState
 import time
 from database.manipulate_data import upload_inline_hotel_photo_buttons, download_inline_hotel_photo_buttons
+from loader import logger
 
+
+@logger.catch
 def close_operation():
     close_operation = InlineKeyboardMarkup(row_width=1)
     close_operation.add(
@@ -13,6 +16,7 @@ def close_operation():
     return close_operation
 
 
+@logger.catch
 def search_city_inline_keyboard(answer_search_city):
     search_city_inline_keyboard = InlineKeyboardMarkup(row_width=1)
 
@@ -23,10 +27,11 @@ def search_city_inline_keyboard(answer_search_city):
     return search_city_inline_keyboard
 
 
+@logger.catch
 def open_photo_or_geo(chat_id, user_id, id_hotel, latitude, longitude):
     bot.set_state(user_id=user_id, state=UserInfoState.upload_photo, chat_id=chat_id)
-    open_photo = InlineKeyboardMarkup(row_width=2)
-    open_photo.add(
+    open_photo_or_geo = InlineKeyboardMarkup(row_width=2)
+    open_photo_or_geo.add(
         InlineKeyboardButton(
             text='Фото',
             callback_data=f'count_photo_question  {id_hotel}'
@@ -39,9 +44,10 @@ def open_photo_or_geo(chat_id, user_id, id_hotel, latitude, longitude):
 
     upload_inline_hotel_photo_buttons('open_photo_or_geo', id_hotel=id_hotel, latitude=latitude, longitude=longitude)
 
-    return open_photo
+    return open_photo_or_geo
 
 
+@logger.catch
 def edite_message(start_number):
     edite_message = InlineKeyboardMarkup(row_width=1)
 
@@ -54,6 +60,7 @@ def edite_message(start_number):
     return edite_message
 
 
+@logger.catch
 def number_photo_keyboard(id_hotel, start_number):
     number_photo_keyboard = InlineKeyboardMarkup(row_width=3)
     text_button = [InlineKeyboardButton(text='Выберите количество фото', callback_data='callback_data')]
@@ -67,6 +74,7 @@ def number_photo_keyboard(id_hotel, start_number):
     return number_photo_keyboard
 
 
+@logger.catch
 def edit_number_photo_keyboard(start_number, id_message, chat_id, user_id, id_hotel):
     latitude, longitude = download_inline_hotel_photo_buttons(id_hotel)
 

@@ -1,5 +1,7 @@
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton
+from loader import logger
 
+@logger.catch
 def user_contact_request():
     user_contact_request = ReplyKeyboardMarkup(row_width=1, one_time_keyboard=True, resize_keyboard=True)
 
@@ -12,6 +14,7 @@ def user_contact_request():
     return user_contact_request
 
 
+@logger.catch
 def number_keyboard(one_time_keyboard=True):
     number_keyboard = ReplyKeyboardMarkup(row_width=5, one_time_keyboard=one_time_keyboard,  resize_keyboard=True)
 
@@ -22,6 +25,7 @@ def number_keyboard(one_time_keyboard=True):
     return number_keyboard
 
 
+@logger.catch
 def menu_keyboard():
     menu_keyboard = ReplyKeyboardMarkup(row_width=2, one_time_keyboard=True, resize_keyboard=True)
 
@@ -36,6 +40,7 @@ def menu_keyboard():
     return menu_keyboard
 
 
+@logger.catch
 def question():
     question = ReplyKeyboardMarkup(row_width=2, one_time_keyboard=True, resize_keyboard=True)
     question.add(

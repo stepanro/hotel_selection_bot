@@ -6,13 +6,14 @@ from config_data.config import headers
 from loader import logger
 
 
+@logger.catch
 def request_to_api(url, headers, querystring):
     response = get(url, headers=headers, params=querystring, timeout=30)
     if response.status_code == codes.ok:
         return response
 
 
-
+@logger.catch
 def get_city(city):
     url_search_city = os.getenv('URL_SEARCH_CITY')
     querystring = {"query": city,
@@ -34,6 +35,7 @@ def get_city(city):
     return search_dict
 
 
+@logger.catch
 def get_mode(input_data, mode):
     sort_order = None
 
@@ -49,6 +51,7 @@ def get_mode(input_data, mode):
         return sort_order
 
 
+@logger.catch
 def get_data(response):
     data = dict()
     pattern = r'(?="results":).+?(?=,"pagination")'
@@ -143,7 +146,7 @@ def get_hotel_list(input_data, mode):
 
         return search_dict
 
-
+@logger.catch
 def get_photo(id_hotel, count_photos):
     url = os.getenv('URL_PROPERTIES_GET_HOTEL_PHOTO')
 

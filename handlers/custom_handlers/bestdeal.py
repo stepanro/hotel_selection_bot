@@ -1,8 +1,10 @@
 from loader import bot
 from states.ClassUserState import UserInfoState
 from keyboards.reply.reply_keyboards import number_keyboard
+from loader import logger
 
 
+@logger.catch
 @bot.message_handler(state=UserInfoState.min_price)
 def min_price(message):
     min_price = message.text
@@ -20,6 +22,7 @@ def min_price(message):
         bot.send_message(chat_id=chat_id, text='Введите минимальную стоимость отеля в рублях')
 
 
+@logger.catch
 @bot.message_handler(state=UserInfoState.max_price)
 def max_price(message):
     max_price = message.text
@@ -37,6 +40,7 @@ def max_price(message):
         bot.send_message(chat_id=chat_id, text='Введите максимальную стоимость отеля в рублях')
 
 
+@logger.catch
 @bot.message_handler(state=UserInfoState.min_distance)
 def min_distance(message):
     min_distance = message.text
@@ -54,6 +58,7 @@ def min_distance(message):
         bot.send_message(chat_id=chat_id, text='Введите минимальное расстояние от центра в километрах')
 
 
+@logger.catch
 @bot.message_handler(state=UserInfoState.max_distance)
 def max_distance(message):
     max_distance = message.text

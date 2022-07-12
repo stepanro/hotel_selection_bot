@@ -7,8 +7,10 @@ from telegram_bot_calendar.detailed import DetailedTelegramCalendar
 from states.ClassUserState import DateRangeState
 ALL_STEPS = {'y': 'год', 'm': 'месяц', 'd': 'день'}
 from telebot.types import CallbackQuery
+from loader import logger
 
 
+@logger.catch
 @bot.message_handler(commands=['history'])
 @bot.message_handler(func=lambda message: message.text == '📜 История запросов')
 def history(message):
@@ -37,6 +39,7 @@ def history(message):
             data['out_message'] = out_message.message_id
 
 
+@logger.catch
 @bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=3))
 def handle_arrival_date(call: CallbackQuery):
     today = date.today()
@@ -83,6 +86,7 @@ def handle_arrival_date(call: CallbackQuery):
             data.pop('min_date')
 
 
+@logger.catch
 @bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=4))
 def handle_arrival_date(call: CallbackQuery):
     today = date.today()
@@ -122,6 +126,7 @@ def handle_arrival_date(call: CallbackQuery):
         requests_history(chat_id=chat_id, user_id=user_id)
 
 
+@logger.catch
 def requests_history(chat_id, user_id):
     with bot.retrieve_data(user_id=user_id, chat_id=chat_id) as data:
         first_date_search = data.pop('date_start_search')

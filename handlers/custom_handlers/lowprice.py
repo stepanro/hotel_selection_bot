@@ -1,5 +1,5 @@
 import time
-from loader import bot
+from loader import bot, msk
 from states.ClassUserState import UserInfoState, DateRangeState
 from apis.get_data_from_api import get_hotel_list
 from keyboards.inline.inline_keyboards import close_operation, search_city_inline_keyboard, open_photo_or_geo
@@ -10,21 +10,20 @@ from database.manipulate_data import upload_user_history
 from utils.get_date import get_calendar
 from telegram_bot_calendar import DetailedTelegramCalendar
 from telebot.types import CallbackQuery
+from loader import logger
 
 city_dict = dict()
 ALL_STEPS = {'y': 'год', 'm': 'месяц', 'd': 'день'}
 
 
+@logger.catch
 @bot.message_handler(commands=['lowprice', 'highprice', 'bestdeal'])
 @bot.message_handler(func=lambda
-        message: message.text == '🛏️ Недорогие отели'
-                 or message.text == '🏨 Дорогие отели'
-                 or message.text == '🏩 Лучшие отели'
-                     )
-
+        message: message.text == '🛏️ Недорогие отели' or message.text == '🏨 Дорогие отели' or message.text == '🏩 Лучшие отели')
 def lowprice(message):
     user_id = message.from_user.id
     chat_id = message.chat.id
+    mode = str()
 
     bot.set_state(user_id=user_id, state=UserInfoState.search_city, chat_id=chat_id)
 
@@ -35,14 +34,13 @@ def lowprice(message):
     elif message.text == '/bestdeal' or message.text == '🏩 Лучшие отели':
         mode = 'bestdeal'
 
-
     with bot.retrieve_data(user_id=user_id, chat_id=chat_id) as data:
         data['mode'] = mode
-
 
     bot.send_message(message.from_user.id, 'В каком городе будем искать отели?', reply_markup=close_operation())
 
 
+@logger.catch
 @bot.message_handler(state=UserInfoState.search_city)
 def search_city(message):
     if message.text.isalpha():
@@ -57,13 +55,14 @@ def search_city(message):
         bot.send_message(message.from_user.id, 'Имя города не может состоять из цифр, введите имя города еще раз.')
 
 
+@logger.catch
 @bot.callback_query_handler(func=lambda callback: callback.data.startswith('get_city'))
 def get_name_city(callback):
     _, destinationid = callback.data.split()
     message_id = callback.message.id
     user_id = callback.from_user.id
     chat_id = callback.message.chat.id
-    time_input = datetime.today()
+    time_input = datetime.now(tz=msk)
     start_date = time_input.date()
 
     bot.delete_message(chat_id, message_id)
@@ -85,9 +84,10 @@ def get_name_city(callback):
         data['time_input_city'] = time_input
 
 
+@logger.catch
 @bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=1))
 def handle_arrival_date(call: CallbackQuery):
-    start_date = datetime.today().date()
+    start_date = datetime.now(tz=msk).date()
     chat_id = call.message.chat.id
     user_id = call.from_user.id
 
@@ -128,9 +128,10 @@ def handle_arrival_date(call: CallbackQuery):
             bot.set_state(call.from_user.id, DateRangeState.check_out, call.message.chat.id)
 
 
+@logger.catch
 @bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=2))
 def handle_arrival_date(call: CallbackQuery):
-    today = datetime.today().date()
+    today = datetime.now(tz=msk).date()
     chat_id = call.message.chat.id
     user_id = call.from_user.id
     message_id = call.message.message_id
@@ -177,6 +178,7 @@ def set_numer_hotels(chat_id, user_id):
             bot.set_state(user_id=user_id, state=UserInfoState.min_price, chat_id=chat_id)
 
 
+@logger.catch
 @bot.message_handler(state=UserInfoState.number_hotels)
 def number_hotels(message):
     chat_id = message.chat.id
@@ -193,7 +195,7 @@ def number_hotels(message):
     hotel_list = list()
 
     for count_hotel, hotel in enumerate(request_get_hotel.values()):
-        time.sleep(0.5)
+        time.sleep(0.6)
 
         if hotel['hotel_price'] == 'нет данных о стоимости отеля':
             hotel_price_all_time = hotel['hotel_price']
@@ -220,21 +222,28 @@ def number_hotels(message):
                                longitude=hotel['hotel_coordinate']['lon']
                            )
                            )
-        except Exception:
-            if count_hotel + 1 == len(request_get_hotel):
-                bot.send_message(
-                    chat_id=message.from_user.id,
-                    text='К сожалению, при загрузке произошла ошибка, '
-                         'пробовать еще раз запрашивать этот город безполезно.',
-                    reply_markup=menu_keyboard()
-                )
-
-            else:
-                bot.send_message(
-                    chat_id=message.from_user.id,
-                    text='К сожалению, при загрузке произошла ошибка, '
-                         'пробовать еще раз запрашивать этот город безполезно.'
-                )
+        except Exception as exc:
+            print(exc)
+            bot.send_chat_action(chat_id=chat_id, action='upload_photo')
+            bot.send_photo(chat_id=message.from_user.id,
+                           photo=hotel['url_pic'],
+                           caption='{hotel_name}\n{hotel_url}\n{all_day_in_hotel}\n{distance_center}\n{hotel_price}\n{hotel_price_all_time}'
+                           .format(
+                               hotel_name=f'🏨 {hotel["hotel_name"]}',
+                               hotel_url=f'🌐 сайт {hotel["hotel_url"]}',
+                               all_day_in_hotel=f'⌛ всего времени в отеле {(data["check_out"] - data["check_in"]).days}',
+                               distance_center=f'📍 Дистанция от исторического центра {hotel["distance_center"]}',
+                               hotel_price=f'💲 стоимость одной ночи {hotel["hotel_price"]}',
+                               hotel_price_all_time=hotel_price_all_time
+                           ),
+                           reply_markup=open_photo_or_geo(
+                               chat_id=chat_id,
+                               user_id=user_id,
+                               id_hotel=hotel['hotel_id'],
+                               latitude=hotel['hotel_coordinate']['lat'],
+                               longitude=hotel['hotel_coordinate']['lon']
+                           )
+                           )
 
         hotel_dict[f'🏨 {hotel["hotel_name"]}'] = {
             'photo': hotel['url_pic'],

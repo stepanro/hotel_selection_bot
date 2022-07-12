@@ -1,6 +1,8 @@
 from telegram_bot_calendar.detailed import DetailedTelegramCalendar
+from loader import logger
 
 
+@logger.catch
 def get_calendar(is_process=False, callback_data=None, **kwargs):
     if is_process:
         result, key, step = DetailedTelegramCalendar(calendar_id=kwargs['calendar_id'],

@@ -1,10 +1,12 @@
 import json
-
+from loader import logger
 import mysql.connector
 from mysql.connector import Error
 import os
 from config_data.config import load_dotenv
 
+
+@logger.catch
 def create_connection(*args, **kwargs):
     host_name, user_name, user_password, database_name = kwargs.values()
     connection = None
@@ -28,6 +30,7 @@ password = os.getenv('PASSWORD')
 name_database = os.getenv('NAME_DATABASE')
 
 
+@logger.catch
 def check_table():
     connection = create_connection(host_name=host, user_name=user, user_password=password, database_name=name_database)
     cursor = connection.cursor()
@@ -59,10 +62,10 @@ def check_table():
 
     if "inline_hotel_photo_buttons" not in table:
         command = f"CREATE TABLE `{name_database}`.`inline_hotel_photo_buttons` (" \
-                  "`id` INT NOT NULL    AUTO_INCREMENT," \
-                  "`id_hotel`                 INT NULL," \
-                  "`latitude`               FLOAT NULL," \
-                  "`longitude`              FLOAT NULL," \
+                  "`id` INT NOT NULL       AUTO_INCREMENT," \
+                  "`id_hotel`               TINYTEXT NULL," \
+                  "`latitude`               TINYTEXT NULL," \
+                  "`longitude`              TINYTEXT NULL," \
                   "PRIMARY KEY (`id`))" \
                   "DEFAULT CHARACTER SET = utf8;"
         cursor.execute(command)
@@ -74,6 +77,7 @@ def check_table():
     return True
 
 
+@logger.catch
 def upload_user_data(*args, **kwargs):
     if check_table():
         if len(kwargs) == 6:
@@ -106,6 +110,7 @@ def upload_user_data(*args, **kwargs):
             connection.close()
 
 
+@logger.catch
 def download_user_data(*args, **kwargs):
     if check_table():
 
@@ -127,7 +132,7 @@ def download_user_data(*args, **kwargs):
             return id, user_id, user_name, user_age, user_country, user_city, user_phone_number
 
 
-
+@logger.catch
 def upload_user_history(hotel_dict, user_id, time_input_city):
     if check_table():
 
@@ -147,6 +152,8 @@ def upload_user_history(hotel_dict, user_id, time_input_city):
         cursor.close()
         connection.close()
 
+
+@logger.catch
 def first_user_request(user_id):
     if check_table():
         connection = create_connection(host_name=host, user_name=user, user_password=password, database_name=name_database)
@@ -166,6 +173,7 @@ def first_user_request(user_id):
         return date_first_user_request
 
 
+@logger.catch
 def get_history(user_id, start_search_date, stop_search_date):
     if check_table():
         data = list()
@@ -187,9 +195,12 @@ def get_history(user_id, start_search_date, stop_search_date):
         return data
 
 
+@logger.catch
 def upload_inline_hotel_photo_buttons(*args, **kwargs):
     if check_table():
         id_hotel, latitude, longitude = kwargs.values()
+        id_hotel, latitude, longitude = map(str, [id_hotel, latitude, longitude])
+
         connection = create_connection(host_name=host, user_name=user, user_password=password,
                                        database_name=name_database)
 
@@ -204,14 +215,16 @@ def upload_inline_hotel_photo_buttons(*args, **kwargs):
         if cursor.rowcount > 0:
             pass
         else:
-            incert_row_command = f"INSERT INTO `inline_hotel_photo_buttons` (`id_hotel`, `latitude`, `longitude`) VALUE ({id_hotel}, {latitude}, {longitude})"
-            cursor.execute(incert_row_command)
+            insert_row_command = f"INSERT INTO `inline_hotel_photo_buttons` (`id_hotel`, `latitude`, `longitude`) VALUE (%s, %s, %s)"
+            value = [id_hotel, latitude, longitude]
+            cursor.execute(insert_row_command, value)
 
             connection.commit()
             cursor.close()
             connection.close()
 
 
+@logger.catch
 def download_inline_hotel_photo_buttons(*args, **kwargs):
     id_hotel = args[0]
 

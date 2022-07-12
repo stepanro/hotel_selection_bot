@@ -5,14 +5,16 @@ from keyboards.inline.inline_keyboards import number_photo_keyboard
 from states.ClassUserState import UserInfoState
 import random
 from keyboards.inline.inline_keyboards import edit_number_photo_keyboard
-from database.manipulate_data import upload_inline_hotel_photo_buttons
+from loader import logger
 
 
+@logger.catch
 def random_number(input_list):
     for position in input_list:
         yield random.randint(1, 100000), position
 
 
+@logger.catch
 @bot.callback_query_handler(func=lambda callback: callback.data.startswith('count_photo_question'))
 def count_photo_question(callback):
     chat_id = callback.message.chat.id
@@ -35,6 +37,7 @@ def count_photo_question(callback):
     edit_number_photo_keyboard(start_number, id_message, chat_id, user_id, id_hotel)
 
 
+@logger.catch
 @bot.inline_handler(func=lambda query: query.query.startswith('see_photo'))
 def see_photo(query):
     try:
@@ -47,11 +50,14 @@ def see_photo(query):
             thumb_url=link_photo,
         ) for id_photo, link_photo in random_number(link_photo_list)]
 
-        bot.answer_inline_query(inline_query_id=query.id, results=photo_list, cache_time=0, is_personal=True)
+        res = bot.answer_inline_query(inline_query_id=query.id, results=photo_list, cache_time=0, is_personal=True)
+        if res is False:
+            raise Exception(f'ошибка inline mode {photo_list}')
     except Exception as exc:
-        print(exc)
+        pass
 
 
+@logger.catch
 @bot.inline_handler(func=lambda query: query.query.startswith('see_geo'))
 def see_geo(query):
     _, latitude, longitude = query.query.split()

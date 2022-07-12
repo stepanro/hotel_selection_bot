@@ -3,8 +3,10 @@ from states.ClassUserState import UserInfoState
 from keyboards.reply.reply_keyboards import menu_keyboard, user_contact_request, question
 from keyboards.inline.inline_keyboards import close_operation
 from database.manipulate_data import upload_user_data, download_user_data
+from loader import logger
 
 
+@logger.catch
 @bot.message_handler(commands=['fill_profile'])
 @bot.message_handler(func=lambda message: message.text == '📝 Личная информация')
 def fill_profile(message):
@@ -39,6 +41,7 @@ def fill_profile(message):
         bot.send_message(message.from_user.id, f'{message.from_user.username} введи свое полное имя', reply_markup=close_operation())
 
 
+@logger.catch
 @bot.message_handler(state=UserInfoState.intermediate_state, func=lambda message: message.text == 'Да' or message.text == 'Нет')
 def user_form(message, ):
     if message.text == 'Да':
@@ -50,6 +53,7 @@ def user_form(message, ):
         bot.delete_state(message.from_user.id, message.chat.id)
 
 
+@logger.catch
 @bot.message_handler(state=UserInfoState.name)
 def get_name(message):
     bot.set_state(message.from_user.id, UserInfoState.age, message.chat.id)
@@ -59,6 +63,7 @@ def get_name(message):
         data['name'] = message.text
 
 
+@logger.catch
 @bot.message_handler(state=UserInfoState.age)
 def get_age(message):
     bot.set_state(message.from_user.id, UserInfoState.country, message.chat.id)
@@ -68,6 +73,7 @@ def get_age(message):
         data['age'] = message.text
 
 
+@logger.catch
 @bot.message_handler(state=UserInfoState.country)
 def get_country(message):
     bot.set_state(message.from_user.id, UserInfoState.city, message.chat.id)
@@ -77,6 +83,7 @@ def get_country(message):
         data['country'] = message.text
 
 
+@logger.catch
 @bot.message_handler(state=UserInfoState.city)
 def get_city(message):
     bot.set_state(message.from_user.id, UserInfoState.phone_number, message.chat.id)
@@ -89,6 +96,7 @@ def get_city(message):
         data['city'] = message.text
 
 
+@logger.catch
 @bot.message_handler(content_types=['text', 'contact'], state=UserInfoState.phone_number)
 def get_phone_number(message):
     if message.contact is not None:
@@ -123,6 +131,7 @@ def get_phone_number(message):
         bot.send_message(message.from_user.id, 'Вы ввели некорректный номер телефона, для отправки номера нажмите на кнопку')
 
 
+@logger.catch
 @bot.callback_query_handler(lambda callback: callback.data == 'exit_operation')
 def close(callback):
     bot.send_message(callback.from_user.id, 'Большое спасибо за уделенное время', reply_markup=menu_keyboard())

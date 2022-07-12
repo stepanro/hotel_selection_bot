@@ -2,12 +2,16 @@ from telebot.types import Message
 from loader import bot
 from keyboards.reply.reply_keyboards import menu_keyboard
 import time
+from loader import logger
 
+
+@logger.catch
 @bot.message_handler(state=None)
 def bot_echo(message: Message):
     bot.send_message(message.from_user.id, f'Прислано сообщение {message.text}, оно не содержит команду, потому и возвращаем.', reply_markup=menu_keyboard())
 
 
+@logger.catch
 @bot.message_handler(content_types=['photo', 'location'])
 def bot_echo(message: Message):
     message_id = message.id

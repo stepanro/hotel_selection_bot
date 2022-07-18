@@ -1,6 +1,7 @@
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 from loader import logger
 
+
 @logger.catch
 def user_contact_request():
     user_contact_request = ReplyKeyboardMarkup(row_width=1, one_time_keyboard=True, resize_keyboard=True)

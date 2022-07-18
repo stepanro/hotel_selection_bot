@@ -2,11 +2,12 @@ from loader import bot
 from states.ClassUserState import UserInfoState
 from keyboards.reply.reply_keyboards import number_keyboard
 from loader import logger
+from telebot.types import Message
 
 
 @logger.catch
 @bot.message_handler(state=UserInfoState.min_price)
-def min_price(message):
+def min_price(message: Message) -> None:
     min_price = message.text
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -24,7 +25,7 @@ def min_price(message):
 
 @logger.catch
 @bot.message_handler(state=UserInfoState.max_price)
-def max_price(message):
+def max_price(message: Message) -> None:
     max_price = message.text
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -42,7 +43,7 @@ def max_price(message):
 
 @logger.catch
 @bot.message_handler(state=UserInfoState.min_distance)
-def min_distance(message):
+def min_distance(message: Message) -> None:
     min_distance = message.text
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -60,7 +61,7 @@ def min_distance(message):
 
 @logger.catch
 @bot.message_handler(state=UserInfoState.max_distance)
-def max_distance(message):
+def max_distance(message: Message) -> None:
     max_distance = message.text
     chat_id = message.chat.id
     user_id = message.from_user.id

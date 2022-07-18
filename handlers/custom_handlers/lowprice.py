@@ -2,7 +2,7 @@ import time
 from loader import bot, msk
 from states.ClassUserState import UserInfoState, DateRangeState
 from apis.get_data_from_api import get_hotel_list
-from keyboards.inline.inline_keyboards import close_operation, search_city_inline_keyboard, open_photo_or_geo
+from keyboards.inline.inline_keyboards import close_operation_keyboard, search_city_inline_keyboard, open_photo_or_geo_keyboard
 from keyboards.reply.reply_keyboards import menu_keyboard, number_keyboard
 from apis.get_data_from_api import get_city
 from datetime import datetime, timedelta
@@ -16,10 +16,12 @@ city_dict = dict()
 ALL_STEPS = {'y': 'год', 'm': 'месяц', 'd': 'день'}
 
 
-@logger.catch
+
 @bot.message_handler(commands=['lowprice', 'highprice', 'bestdeal'])
-@bot.message_handler(func=lambda
-        message: message.text == '🛏️ Недорогие отели' or message.text == '🏨 Дорогие отели' or message.text == '🏩 Лучшие отели')
+@bot.message_handler(func=lambda message: message.text == '🛏️ Недорогие отели'
+                     or message.text == '🏨 Дорогие отели'
+                     or message.text == '🏩 Лучшие отели')
+@logger.catch
 def lowprice(message):
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -37,14 +39,15 @@ def lowprice(message):
     with bot.retrieve_data(user_id=user_id, chat_id=chat_id) as data:
         data['mode'] = mode
 
-    bot.send_message(message.from_user.id, 'В каком городе будем искать отели?', reply_markup=close_operation())
+    bot.send_message(message.from_user.id, 'В каком городе будем искать отели?', reply_markup=close_operation_keyboard())
 
 
-@logger.catch
 @bot.message_handler(state=UserInfoState.search_city)
+@logger.catch
 def search_city(message):
     if message.text.isalpha():
         answer_search_city = get_city(message.text)
+
         for name_city, value in answer_search_city.items():
             city_dict[value[1]] = name_city
 
@@ -55,11 +58,12 @@ def search_city(message):
         bot.send_message(message.from_user.id, 'Имя города не может состоять из цифр, введите имя города еще раз.')
 
 
-@logger.catch
 @bot.callback_query_handler(func=lambda callback: callback.data.startswith('get_city'))
+@logger.catch
 def get_name_city(callback):
     _, destinationid = callback.data.split()
     message_id = callback.message.id
+
     user_id = callback.from_user.id
     chat_id = callback.message.chat.id
     time_input = datetime.now(tz=msk)
@@ -84,11 +88,12 @@ def get_name_city(callback):
         data['time_input_city'] = time_input
 
 
-@logger.catch
 @bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=1))
+@logger.catch
 def handle_arrival_date(call: CallbackQuery):
     start_date = datetime.now(tz=msk).date()
     chat_id = call.message.chat.id
+
     user_id = call.from_user.id
 
     result, key, step = get_calendar(calendar_id=1,
@@ -128,11 +133,12 @@ def handle_arrival_date(call: CallbackQuery):
             bot.set_state(call.from_user.id, DateRangeState.check_out, call.message.chat.id)
 
 
-@logger.catch
 @bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=2))
+@logger.catch
 def handle_arrival_date(call: CallbackQuery):
     today = datetime.now(tz=msk).date()
     chat_id = call.message.chat.id
+
     user_id = call.from_user.id
     message_id = call.message.message_id
 
@@ -167,6 +173,7 @@ def handle_arrival_date(call: CallbackQuery):
         set_numer_hotels(chat_id=chat_id, user_id=user_id)
 
 
+@logger.catch
 def set_numer_hotels(chat_id, user_id):
     with bot.retrieve_data(user_id=user_id, chat_id=chat_id) as data:
         if data['mode'] == 'lowprice' or data['mode'] == 'highprice':
@@ -178,11 +185,13 @@ def set_numer_hotels(chat_id, user_id):
             bot.set_state(user_id=user_id, state=UserInfoState.min_price, chat_id=chat_id)
 
 
-@logger.catch
+
 @bot.message_handler(state=UserInfoState.number_hotels)
+@logger.catch
 def number_hotels(message):
     chat_id = message.chat.id
     user_id = message.from_user.id
+
 
     hotel_dict = dict()
 
@@ -214,7 +223,7 @@ def number_hotels(message):
                                hotel_price=f'💲 стоимость одной ночи {hotel["hotel_price"]}',
                                hotel_price_all_time=hotel_price_all_time
                            ),
-                           reply_markup=open_photo_or_geo(
+                           reply_markup=open_photo_or_geo_keyboard(
                                chat_id=chat_id,
                                user_id=user_id,
                                id_hotel=hotel['hotel_id'],
@@ -236,7 +245,7 @@ def number_hotels(message):
                                hotel_price=f'💲 стоимость одной ночи {hotel["hotel_price"]}',
                                hotel_price_all_time=hotel_price_all_time
                            ),
-                           reply_markup=open_photo_or_geo(
+                           reply_markup=open_photo_or_geo_keyboard(
                                chat_id=chat_id,
                                user_id=user_id,
                                id_hotel=hotel['hotel_id'],

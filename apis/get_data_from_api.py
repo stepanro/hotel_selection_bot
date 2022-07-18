@@ -146,6 +146,7 @@ def get_hotel_list(input_data, mode):
 
         return search_dict
 
+
 @logger.catch
 def get_photo(id_hotel, count_photos):
     url = os.getenv('URL_PROPERTIES_GET_HOTEL_PHOTO')
@@ -162,8 +163,8 @@ def get_photo(id_hotel, count_photos):
     photo_list = list()
     count_photo = int()
     for string_with_link in data['hotelImages']:
-        if count_photo + 1 == int(count_photos) + 1:
-            return photo_list
+        if count_photo == int(count_photos):
+            return photo_list, count_photo
         else:
             link = string_with_link['baseUrl']
             link = re.sub('{size}', 'z', link)
@@ -171,3 +172,5 @@ def get_photo(id_hotel, count_photos):
             if requests_answer.status_code == 200:
                 photo_list.append(requests_answer.url)
                 count_photo += 1
+    else:
+        return photo_list, count_photo

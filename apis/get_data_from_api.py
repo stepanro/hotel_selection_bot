@@ -1,4 +1,5 @@
 import json
+from loader import bot
 from requests import get, codes, request
 import os
 import re
@@ -6,6 +7,7 @@ from config_data.config import headers
 from loader import logger
 from requests import Response
 
+no_name_user = os.getenv('NO_NAME_USER')
 
 @logger.catch
 def request_to_api(url: str, headers: dict, querystring: dict) -> Response:
@@ -62,6 +64,52 @@ def get_data(response: Response) -> dict:
 
 
 @logger.catch
+def cash_photo_link(input_photo_list: list) -> None:
+    """ Функция отправляет фото из списка стороннему пользователю, для того, чтобы файлы попалив кэш телеграмма,
+    иначе фото не отправляются через медиагруппу и через inline mode """
+    for link_photo in input_photo_list:
+        bot.send_photo(chat_id=no_name_user, photo=link_photo)
+
+
+@logger.catch
+def get_photo(id_hotel: str, count_photos: int) -> list:
+    """ Функция принимает id отеля, количество желаемых фото и возвращает
+    список фото и количество реально найденных фотографий """
+    url = os.getenv('URL_PROPERTIES_GET_HOTEL_PHOTO')
+    querystring = {"id": id_hotel}
+    response = request("GET", url, headers=headers, params=querystring)
+    pattern = r'(?="hotelImages":).+?(?=,"roomImages":)'
+    find = re.search(pattern, response.text)
+
+    photo_list = list()
+    count_photo = int()
+
+    if find:
+        data = json.loads(f'{{{find[0]}}}')
+
+        for string_with_link in data['hotelImages']:
+            if count_photo == int(count_photos):
+                return photo_list
+            else:
+                link = string_with_link['baseUrl']
+                link = re.sub('{size}', 'z', link)
+                requests_answer = get(link)
+                if requests_answer.status_code == 200:
+                    photo_list.append(requests_answer.url)
+                    count_photo += 1
+        else:
+            return photo_list
+    else:
+        for _ in range(int(count_photos)):
+            photo_list.append('https://img1.freepng.ru/20180621/zso/kisspng-business-click-ecommerce-'
+                              'web-agency-service-plas-no-photo-5b2c4658462e10.8823241115296282482875.jpg')
+
+        cash_photo_link(photo_list)
+
+        return photo_list
+
+
+@logger.catch
 def get_hotel_list(input_data: dict, mode: str) -> dict:
     """ Функция принимает данные для запроса и возвращает словарь с отелями """
     count_hotel, search_dict, querystring, search_count_hotel, destinationid, check_in, check_out, sort_order, \
@@ -93,20 +141,23 @@ def get_hotel_list(input_data: dict, mode: str) -> dict:
         for hotel in data['results']:
             if count_hotel < int(search_count_hotel):
                 if mode == 'lowprice' or mode == 'highprice':
-                    if hotel.get('ratePlan') and hotel.get('landmarks'):
+                    if hotel.get('ratePlan') and hotel.get('landmarks') and hotel.get('optimizedThumbUrls'):
                         hotel_price = hotel['ratePlan']['price']['exactCurrent']
+                    else:
+                        hotel_price = 'нет данных о стоимости отеля'
+                    if hotel.get('landmarks'):
                         distance_center = re.sub(',', '../utils', hotel['landmarks'][0]['distance'].split()[0])
                     else:
-                        if hotel.get('ratePlan'):
-                            hotel_price = hotel['ratePlan']['price']['exactCurrent']
-                            distance_center = 'нет данных о расстоянии от центра'
-                        elif hotel.get('landmarks'):
-                            hotel_price = 'нет данных о стоимости отеля'
-                            distance_center = re.sub(',', '../utils', hotel['landmarks'][0]['distance'].split()[0])
+                        distance_center = 'нет данных о расстоянии от центра'
+                    if hotel.get('optimizedThumbUrls'):
+                        url_pic = hotel['optimizedThumbUrls']['srpDesktop']
+                    else:
+                        url_pic = 'https://img1.freepng.ru/20180621/zso/kisspng-business-click-ecommerce-web-' \
+                                  'agency-service-plas-no-photo-5b2c4658462e10.8823241115296282482875.jpg'
 
                     search_dict[hotel['name']] = {'hotel_name': hotel['name'],
                                                   'hotel_id': hotel['id'],
-                                                  'url_pic': hotel['optimizedThumbUrls']['srpDesktop'],
+                                                  'url_pic': url_pic,
                                                   'hotel_price': hotel_price,
                                                   'hotel_url': f"https://www.hotels.com/ho{hotel['id']}",
                                                   'hotel_coordinate': {'lat': hotel['coordinate']['lat'],
@@ -140,33 +191,7 @@ def get_hotel_list(input_data: dict, mode: str) -> dict:
                                                       'distance_center': distance_center
                                                       }
                         count_hotel += 1
+                temp_photo_list = get_photo(id_hotel=hotel['id'], count_photos=10)
+                cash_photo_link(input_photo_list=temp_photo_list)
 
         return search_dict
-
-
-@logger.catch
-def get_photo(id_hotel: str, count_photos: int) -> tuple[list[str], int]:
-    """ Функция принимает id отеля, количество желаемых фото и возвращает
-    список фото и количество реально найденных фотографий """
-    url = os.getenv('URL_PROPERTIES_GET_HOTEL_PHOTO')
-    querystring = {"id": id_hotel}
-    response = request("GET", url, headers=headers, params=querystring)
-    pattern = r'(?="hotelImages":).+?(?=,"roomImages":)'
-    find = re.search(pattern, response.text)
-
-    if find:
-        data = json.loads(f'{{{find[0]}}}')
-    photo_list = list()
-    count_photo = int()
-    for string_with_link in data['hotelImages']:
-        if count_photo == int(count_photos):
-            return photo_list, count_photo
-        else:
-            link = string_with_link['baseUrl']
-            link = re.sub('{size}', 'z', link)
-            requests_answer = get(link)
-            if requests_answer.status_code == 200:
-                photo_list.append(requests_answer.url)
-                count_photo += 1
-    else:
-        return photo_list, count_photo

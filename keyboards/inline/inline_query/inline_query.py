@@ -1,22 +1,35 @@
 from loader import bot
 from apis.get_data_from_api import get_photo
-from telebot.types import InlineQueryResultLocation, InlineQueryResultPhoto
+from telebot.types import InlineQueryResultLocation, InlineQueryResultPhoto, CallbackQuery, InlineQuery
 from keyboards.inline.inline_keyboards import number_photo_keyboard
 from states.ClassUserState import UserInfoState
 import random
+import os
 from keyboards.inline.inline_keyboards import edit_number_photo_keyboard
 from loader import logger
 
+no_name_user = os.getenv('NO_NAME_USER')
+
 
 @logger.catch
-def random_number(input_list):
-    for position in input_list:
-        yield random.randint(1, 100000), position
+def random_number(input_list: list) -> tuple[int, str]:
+    """ Функция возвращает рандомное число от 1 до 100000 """
+    for link in input_list:
+        yield random.randint(1, 100000), link
+
+
+@logger.catch
+def cash_photo_link(input_photo_list: list) -> None:
+    """ Функция отправляет фото из списка стороннему пользователю, для того, чтобы файлы попалив кэш телеграмма,
+    иначе фото не отправляются через медиагруппу и через inline mode """
+    for link_photo in input_photo_list:
+        bot.send_photo(chat_id=no_name_user, photo=link_photo)
 
 
 @bot.callback_query_handler(func=lambda callback: callback.data.startswith('count_photo_question'))
 @logger.catch
-def count_photo_question(callback):
+def count_photo_question(callback: CallbackQuery) -> None:
+    """ Функция подменяет inline клавиатуру под информацией об отеле на клавиатуру с количеством фото пользователю """
     chat_id = callback.message.chat.id
     user_id = callback.from_user.id
     _, id_hotel = callback.data.split()
@@ -36,9 +49,11 @@ def count_photo_question(callback):
 
 @bot.inline_handler(func=lambda query: query.query.startswith('see_photo'))
 @logger.catch
-def see_photo(query):
+def see_photo(query: InlineQuery) -> None:
+    """ Функция через inline mode отправляет пользователю запрашиваемые фотографии """
     _, id_hotel, count_photo = query.query.split()
     link_photo_list, real_number_photo = get_photo(id_hotel, count_photo)
+    cash_photo_link(link_photo_list)
     photo_dict = {InlineQueryResultPhoto(
         id=id_photo,
         photo_url=link_photo,
@@ -49,7 +64,8 @@ def see_photo(query):
 
 @bot.inline_handler(func=lambda query: query.query.startswith('see_geo'))
 @logger.catch
-def see_geo(query):
+def see_geo(query: InlineQuery) -> None:
+    """ Функция через inline mode отправляет пользователю геопозицию отеля """
     _, latitude, longitude = query.query.split()
     latitude, longitude = map(float, [latitude, longitude])
     geo_list = [

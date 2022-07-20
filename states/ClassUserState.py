@@ -29,6 +29,7 @@ class UserInfoState(StatesGroup):
     """Промежуточные статусы"""
     upload_photo = State()
 
+
 class DateRangeState(StatesGroup):
     check_in = State()
     check_out = State()

@@ -1,19 +1,20 @@
 import json
-from loader import bot
+from loader import bot, logger
 from utils.get_date import get_calendar
 from database.manipulate_data import first_user_request, get_history
 from datetime import date, timedelta
 from telegram_bot_calendar.detailed import DetailedTelegramCalendar
 from states.ClassUserState import DateRangeState
-ALL_STEPS = {'y': 'год', 'm': 'месяц', 'd': 'день'}
 from telebot.types import CallbackQuery
-from loader import logger
+
+ALL_STEPS = {'y': 'год', 'm': 'месяц', 'd': 'день'}
 
 
-@logger.catch
 @bot.message_handler(commands=['history'])
 @bot.message_handler(func=lambda message: message.text == '📜 История запросов')
+@logger.catch
 def history(message):
+    """ Функция обрабатывает сообщения при условии команды /history или текста сообщения 📜 История запросов """
     chat_id = message.chat.id
     user_id = message.from_user.id
 
@@ -39,9 +40,11 @@ def history(message):
             data['out_message'] = out_message.message_id
 
 
-@logger.catch
 @bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=3))
-def handle_arrival_date(call: CallbackQuery):
+@logger.catch
+def handle_arrival_date(call: CallbackQuery) -> None:
+    """ Первая функция календаря, вызывает функцию календаря и возвращает inline keyboard до тех пор,
+    пока функция календаря не вернет result """
     today = date.today()
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -86,9 +89,11 @@ def handle_arrival_date(call: CallbackQuery):
             data.pop('min_date')
 
 
-@logger.catch
 @bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=4))
+@logger.catch
 def handle_arrival_date(call: CallbackQuery):
+    """ Вторая функция календаря, вызывает функцию календаря и возвращает inline keyboard до тех пор,
+    пока функция календаря не вернет result """
     today = date.today()
     chat_id = call.message.chat.id
     user_id = call.from_user.id
@@ -96,8 +101,6 @@ def handle_arrival_date(call: CallbackQuery):
 
     with bot.retrieve_data(chat_id=chat_id, user_id=user_id) as data:
         min_date = data['date_start_search']
-
-
 
     result, key, step = get_calendar(calendar_id=4,
                                      current_date=today,
@@ -107,7 +110,6 @@ def handle_arrival_date(call: CallbackQuery):
                                      is_process=True,
                                      callback_data=call)
     if not result and key:
-
 
         bot.edit_message_text(f"Выберите {ALL_STEPS[step]}",
                               chat_id=user_id,
@@ -127,12 +129,15 @@ def handle_arrival_date(call: CallbackQuery):
 
 
 @logger.catch
-def requests_history(chat_id, user_id):
+def requests_history(chat_id: int, user_id: int) -> None:
+    """ Функция выводит пользователю историю его запросов с учетом даты начала и даты конца поиска """
     with bot.retrieve_data(user_id=user_id, chat_id=chat_id) as data:
         first_date_search = data.pop('date_start_search')
         second_date_search = data.pop('date_stop_search') + timedelta(days=1)
 
-    res_get_history = get_history(user_id=user_id, start_search_date=first_date_search, stop_search_date=second_date_search)
+    res_get_history = get_history(user_id=user_id,
+                                  start_search_date=first_date_search,
+                                  stop_search_date=second_date_search)
 
     if res_get_history:
         for i_request in res_get_history:

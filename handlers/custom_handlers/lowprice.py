@@ -1,11 +1,10 @@
 import time
 from loader import bot, msk
 from states.ClassUserState import UserInfoState, DateRangeState
-from apis.get_data_from_api import get_hotel_list
+from apis.get_data_from_api import get_hotel_list, get_city
 from keyboards.inline.inline_keyboards import close_operation_keyboard, search_city_inline_keyboard, \
     open_photo_or_geo_keyboard
 from keyboards.reply.reply_keyboards import menu_keyboard, number_keyboard
-from apis.get_data_from_api import get_city
 from datetime import datetime, timedelta
 from database.manipulate_data import upload_user_history
 from utils.get_date import get_calendar
@@ -209,7 +208,7 @@ def number_hotels(message: Message) -> None:
         data['search_count_hotel'] = message.text
 
     mode = data.pop('mode')
-    request_get_hotel = get_hotel_list(input_data=data, mode=mode)
+    request_get_hotel = get_hotel_list(input_data=data, mode=mode, chat_id=chat_id)
     hotel_list = list()
 
     for count_hotel, hotel in enumerate(request_get_hotel.values()):
@@ -240,6 +239,15 @@ def number_hotels(message: Message) -> None:
                                longitude=hotel['hotel_coordinate']['lon']
                            )
                            )
+
+            hotel_dict[f'🏨 {hotel["hotel_name"]}'] = {
+                'photo': hotel['url_pic'],
+                'hotel_url': f'🌐 сайт {hotel["hotel_url"]}',
+                'hotel_price': f'💲 стоимость одной ночи {hotel["hotel_price"]}',
+                'distance_center': f'📍 Дистанция от исторического центра {hotel["distance_center"]}',
+                'all_day_in_hotel': f'⌛ всего времени в отеле {(data["check_out"] - data["check_in"]).days}',
+                'hotel_price_all_time': hotel_price_all_time
+            }
         except Exception as exc:
             logger.info(f'{datetime} {exc}')
 

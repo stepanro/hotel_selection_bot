@@ -1,4 +1,5 @@
 import json
+import math
 from loader import bot
 from requests import get, codes, request
 import os
@@ -6,8 +7,10 @@ import re
 from config_data.config import headers
 from loader import logger
 from requests import Response
+from apis.inline_helpers.inline_helpers import loading_inline_keyboard
 
 no_name_user = os.getenv('NO_NAME_USER')
+
 
 @logger.catch
 def request_to_api(url: str, headers: dict, querystring: dict) -> Response:
@@ -110,11 +113,11 @@ def get_photo(id_hotel: str, count_photos: int) -> list:
 
 
 @logger.catch
-def get_hotel_list(input_data: dict, mode: str) -> dict:
+def get_hotel_list(input_data: dict, mode: str, chat_id: int) -> dict:
     """ Функция принимает данные для запроса и возвращает словарь с отелями """
     count_hotel, search_dict, querystring, search_count_hotel, destinationid, check_in, check_out, sort_order, \
         min_price, max_price = int(), dict(), dict(), int(), int(), int(), int(), int(), int(), int()
-
+    state_load = None
     sort_order = get_mode(mode)
 
     if mode == 'lowprice' or mode == 'highprice':
@@ -139,6 +142,18 @@ def get_hotel_list(input_data: dict, mode: str) -> dict:
 
     if data:
         for hotel in data['results']:
+
+            if state_load is None:
+                if count_hotel == 0:
+                    count_hotel = 1
+                    step = math.ceil(8 / int(search_count_hotel) * count_hotel)
+                    state_load = loading_inline_keyboard(chat_id=chat_id, step=step)
+                    count_hotel = 0
+            elif state_load:
+                step = math.ceil(8 / int(search_count_hotel) * count_hotel)
+                loading_inline_keyboard(chat_id=chat_id, step=step, message_id=state_load)
+
+
             if count_hotel < int(search_count_hotel):
                 if mode == 'lowprice' or mode == 'highprice':
                     if hotel.get('ratePlan') and hotel.get('landmarks') and hotel.get('optimizedThumbUrls'):
@@ -193,5 +208,7 @@ def get_hotel_list(input_data: dict, mode: str) -> dict:
                         count_hotel += 1
                 temp_photo_list = get_photo(id_hotel=hotel['id'], count_photos=10)
                 cash_photo_link(input_photo_list=temp_photo_list)
+
+        bot.delete_message(chat_id=chat_id, message_id=state_load)
 
         return search_dict

@@ -1,11 +1,9 @@
 from loader import bot
 from apis.get_data_from_api import get_photo
 from telebot.types import InlineQueryResultLocation, InlineQueryResultPhoto, CallbackQuery, InlineQuery
-from keyboards.inline.inline_keyboards import number_photo_keyboard
+from keyboards.inline.inline_keyboards import number_photo_keyboard, edit_number_photo_keyboard
 from states.ClassUserState import UserInfoState
 import random
-import os
-from keyboards.inline.inline_keyboards import edit_number_photo_keyboard
 from loader import logger
 
 
@@ -14,14 +12,6 @@ def random_number(input_list: list) -> tuple[int, str]:
     """ Функция возвращает рандомное число от 1 до 100000 """
     for link in input_list:
         yield random.randint(1, 100000), link
-
-
-# @logger.catch
-# def cash_photo_link(input_photo_list: list) -> None:
-#     """ Функция отправляет фото из списка стороннему пользователю, для того, чтобы файлы попалив кэш телеграмма,
-#     иначе фото не отправляются через медиагруппу и через inline mode """
-#     for link_photo in input_photo_list:
-#         bot.send_photo(chat_id=no_name_user, photo=link_photo)
 
 
 @bot.callback_query_handler(func=lambda callback: callback.data.startswith('count_photo_question'))
@@ -51,7 +41,6 @@ def see_photo(query: InlineQuery) -> None:
     """ Функция через inline mode отправляет пользователю запрашиваемые фотографии """
     _, id_hotel, count_photo = query.query.split()
     link_photo_list = get_photo(id_hotel, count_photo)
-    # cash_photo_link(link_photo_list)
     photo_dict = {InlineQueryResultPhoto(
         id=id_photo,
         photo_url=link_photo,
